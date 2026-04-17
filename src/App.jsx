@@ -61,8 +61,8 @@ const Dashboard = () => {
     const contentMap = {
       1: { title: 'Grammar Focus', focus: 'Verb Tenses & Sentence Structure' },
       2: { title: 'Technical Vocabulary', focus: 'Poultry Industry & Engineering Terms' },
-      3: { title: 'Listening Practice', focus: 'Swiss/International English Accents' },
-      4: { title: 'Professional Writing', focus: 'Emails and Technical Reports (B1)' }
+      3: { title: 'Lesson Exercises', focus: 'Reviewing and solving class activities' },
+      4: { title: 'Listening Practice', focus: 'Swiss/International English Accents' }
     };
     return contentMap[dayOfWeek] || null;
   };
@@ -74,6 +74,23 @@ const Dashboard = () => {
     nextWeek.setDate(today.getDate() + 7);
 
     const startDate = new Date('2026-04-17T00:00:00');
+
+    // Lógica para calcular a data da próxima sexta-feira de aula
+    const getNextClassDate = () => {
+      const now = new Date();
+      // Se hoje for sexta e já passou das 09:00 (fim da aula), pula para a próxima
+      const limitToday = new Date();
+      limitToday.setHours(9, 0, 0);
+      
+      let nextFriday = new Date();
+      nextFriday.setDate(now.getDate() + (5 + 7 - now.getDay()) % 7);
+      
+      if (now.getDay() === 5 && now > limitToday) {
+        nextFriday.setDate(nextFriday.getDate() + 7);
+      }
+      
+      return nextFriday.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric' });
+    };
 
     const upcoming = [];
     for(let d = new Date(today); d <= nextWeek; d.setDate(d.getDate() + 1)) {
@@ -88,10 +105,10 @@ const Dashboard = () => {
     }
 
     return (
-      <div className="max-w-5xl mx-auto"> {/* CENTRALIZADO AQUI */}
+      <div className="max-w-5xl mx-auto">
         <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight italic uppercase">English Dashboard</h1>
+            <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight italic uppercase">LMS Dashboard</h1>
             <p className="text-slate-500">Swiss business trip goals tracking.</p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-3">
@@ -116,8 +133,8 @@ const Dashboard = () => {
             <p className="text-xs text-slate-400 mt-2 italic">Target: Feb 22, 2027</p>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-green-600">
-            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Next Lesson</h3>
-            <p className="text-3xl font-black text-slate-800 mt-2">Friday, 17th</p>
+            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Next Class</h3>
+            <p className="text-3xl font-black text-slate-800 mt-2">{getNextClassDate()}</p>
             <p className="text-xs text-slate-400 mt-2 italic">7:30 AM Session</p>
           </div>
         </div>
@@ -165,7 +182,7 @@ const Dashboard = () => {
     ];
 
     return (
-      <div className="max-w-4xl mx-auto pb-10"> {/* CENTRALIZADO AQUI TAMBÉM */}
+      <div className="max-w-4xl mx-auto pb-10">
         <header className="mb-10 text-slate-800">
           <h1 className="text-3xl font-extrabold tracking-tight uppercase italic">Master Roadmap</h1>
           <p className="text-slate-500">Curriculum strategy until Feb 2027</p>
