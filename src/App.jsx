@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Plane, Factory, BookOpen, Brain, Clock, Calendar, CheckCircle2, Circle, Edit3, Save, ChevronDown, ChevronUp } from 'lucide-react';
 
 const Dashboard = () => {
@@ -6,60 +6,67 @@ const Dashboard = () => {
   const [expandedPhase, setExpandedPhase] = useState(1);
   const [expandedMonth, setExpandedMonth] = useState('April');
   const [editingId, setEditingId] = useState(null);
-  const [manualTasks, setManualTasks] = useState([]);
+  
+  // --- PERSISTÊNCIA COM LOCALSTORAGE ---
+  const [manualTasks, setManualTasks] = useState(() => {
+    const saved = localStorage.getItem('swissMissionTasks');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  // --- MAPA DO CRONOGRAMA DE GRAMÁTICA (SEGUNDAS-FEIRAS) ---
+  useEffect(() => {
+    localStorage.setItem('swissMissionTasks', JSON.stringify(manualTasks));
+  }, [manualTasks]);
+
+  // --- ENGLISH GRAMMAR SCHEDULE ---
   const grammarSchedule = {
-    // Fase 1
-    "2026-04-20": "O Verbo To Be (Presente) e Pronomes Pessoais",
-    "2026-04-27": "Artigos (A, An, The) e Plural dos Substantivos",
-    "2026-05-04": "Pronomes Demonstrativos e Adjetivos Possessivos",
-    "2026-05-11": "Present Simple (Afirmativa) - Rotinas",
-    "2026-05-18": "Present Simple (Neg/Int) - Do/Does",
-    "2026-05-25": "Advérbios de Frequência",
-    "2026-06-01": "There is e There are (Existência)",
-    "2026-06-08": "Preposições de Lugar (In, On, At)",
-    "2026-06-15": "Preposições de Tempo (In, On, At)",
-    "2026-06-22": "Substantivos Contáveis e Incontáveis",
-    "2026-06-29": "Quantificadores (Some, Any, Much, Many)",
-    "2026-07-06": "Verbo Modal Can e Can't",
-    "2026-07-13": "Present Continuous (Afirmativa)",
-    "2026-07-20": "Present Continuous (Neg/Int)",
-    "2026-07-27": "Verbo To Be no Passado (Was / Were)",
-    // Fase 2
-    "2026-08-03": "Past Simple - Regulares e Pronúncia -ed",
-    "2026-08-10": "Past Simple - Irregulares comuns",
-    "2026-08-17": "Past Simple - Neg/Int com Did",
-    "2026-08-24": "Past Continuous",
-    "2026-08-31": "Past Simple vs. Past Continuous",
-    "2026-09-07": "Futuro com Going to",
-    "2026-09-14": "Futuro com Will",
-    "2026-09-21": "Adjetivos Comparativos",
-    "2026-09-28": "Adjetivos Superlativos",
-    "2026-10-05": "Pronomes Objetos (Me, you, him, her)",
-    "2026-10-12": "Pronomes Possessivos (Mine, yours)",
-    "2026-10-19": "Advérbios de Modo (Quickly, well)",
-    "2026-10-26": "Have to e Don't have to",
-    "2026-11-02": "Should e Shouldn't",
-    "2026-11-09": "Orações Relativas Básicas",
-    // Fase 3
-    "2026-11-16": "Present Perfect - Introdução",
-    "2026-11-23": "Present Perfect - Just, Already e Yet",
-    "2026-11-30": "Present Perfect - Ever e Never",
-    "2026-12-07": "Present Perfect - For e Since",
+    "2026-04-20": "The Verb To Be (Present) and Personal Pronouns",
+    "2026-04-27": "Articles (A, An, The) and Plural Nouns",
+    "2026-05-04": "Demonstrative Pronouns and Possessive Adjectives",
+    "2026-05-11": "Present Simple (Affirmative) - Talking about routines",
+    "2026-05-18": "Present Simple (Neg/Int) - Using Do/Does",
+    "2026-05-25": "Adverbs of Frequency (Always, usually, never)",
+    "2026-06-01": "There is and There are (Existence)",
+    "2026-06-08": "Prepositions of Place (In, On, At)",
+    "2026-06-15": "Prepositions of Time (In, On, At)",
+    "2026-06-22": "Countable and Uncountable Nouns",
+    "2026-06-29": "Quantifiers (Some, Any, Much, Many)",
+    "2026-07-06": "Modal Verb Can and Can't (Abilities and Permission)",
+    "2026-07-13": "Present Continuous (Affirmative) - Actions now",
+    "2026-07-20": "Present Continuous (Negative and Interrogative)",
+    "2026-07-27": "Verb To Be in the Past (Was / Were)",
+    "2026-08-03": "Past Simple - Regular Verbs and -ed pronunciation",
+    "2026-08-10": "Past Simple - Most common Irregular Verbs",
+    "2026-08-17": "Past Simple - Negative and Interrogative with Did",
+    "2026-08-24": "Past Continuous (Actions in progress in the past)",
+    "2026-08-31": "Past Simple vs. Past Continuous (When and While)",
+    "2026-09-07": "Future with Going to (Plans and intentions)",
+    "2026-09-14": "Future with Will (Quick decisions and promises)",
+    "2026-09-21": "Comparative Adjectives (Bigger, better, etc.)",
+    "2026-09-28": "Superlative Adjectives (The biggest, the best)",
+    "2026-10-05": "Object Pronouns (Me, you, him, her, us, them)",
+    "2026-10-12": "Possessive Pronouns (Mine, yours, his, hers)",
+    "2026-10-19": "Adverbs of Manner (Quickly, well, badly)",
+    "2026-10-26": "Have to and Don't have to (Obligation)",
+    "2026-11-02": "Should and Shouldn't (Giving advice)",
+    "2026-11-09": "Basic Relative Clauses (Who, Which, That)",
+    "2026-11-16": "Present Perfect - Introduction (Life experiences)",
+    "2026-11-23": "Present Perfect - Just, Already and Yet",
+    "2026-11-30": "Present Perfect - Ever and Never",
+    "2026-12-07": "Present Perfect - For and Since",
     "2026-12-14": "Present Perfect vs. Past Simple",
-    "2026-12-21": "Zero e First Conditional",
-    "2026-12-28": "Second Conditional",
-    "2027-01-04": "Verbos Modais de Dedução",
-    "2027-01-11": "Voz Passiva (Passive Voice)",
-    "2027-01-18": "Used to (Hábitos passados)",
-    "2027-01-25": "Reported Speech (Discurso Indireto)",
-    "2027-02-01": "Gerúndio (-ing) vs. Infinitivo",
-    "2027-02-08": "Phrasal Verbs Essenciais",
-    "2027-02-15": "Revisão Geral B1 e Consolidação"
+    "2026-12-21": "Zero Conditional and First Conditional",
+    "2026-12-28": "Second Conditional (Hypothetical situations)",
+    "2027-01-04": "Modal Verbs of Deduction (Must, Might, Can't)",
+    "2027-01-11": "Passive Voice - Focus on the action",
+    "2027-01-18": "Used to (Past habits)",
+    "2027-01-25": "Reported Speech (Reporting what was said)",
+    "2027-02-01": "Gerund (-ing) vs. Infinitive (to + verb)",
+    "2027-02-08": "Essential Phrasal Verbs (B1 introduction)",
+    "2027-02-15": "B1 General Review and Consolidation"
   };
 
   const calculateProgress = () => {
+    const totalEstimatedPoints = 480; 
     const getWeight = (title) => {
       if (title.includes('English Class')) return 3;
       if (title.includes('Grammar Focus')) return 2;
@@ -68,7 +75,6 @@ const Dashboard = () => {
     const completedPoints = manualTasks
       .filter(t => t.completed)
       .reduce((acc, t) => acc + getWeight(t.title), 0);
-    const totalEstimatedPoints = 480; 
     return Math.min(100, Math.round((completedPoints / totalEstimatedPoints) * 100));
   };
 
@@ -102,17 +108,10 @@ const Dashboard = () => {
     const date = new Date(dateStr + 'T12:00:00');
     const dayOfWeek = date.getDay(); 
     const isBreak = date >= new Date('2026-12-21') && date <= new Date('2027-01-10');
-    if (isBreak && dayOfWeek !== 1) return null; // Mantém apenas gramática se quiser, ou null total
+    if (isBreak && dayOfWeek !== 1) return null;
 
     if (dayOfWeek === 5) return { title: 'English Class (Private)', focus: '7:30 AM - B1 Acceleration' };
-    
-    // Lógica Segundas-Feiras (Grammar Focus Dinâmico)
-    if (dayOfWeek === 1) {
-        return { 
-            title: 'Grammar Focus', 
-            focus: grammarSchedule[dateStr] || "Review & Practice" 
-        };
-    }
+    if (dayOfWeek === 1) return { title: 'Grammar Focus', focus: grammarSchedule[dateStr] || "Review & Practice" };
 
     const contentMap = {
       2: { title: 'Technical Vocabulary', focus: 'Poultry Industry & Engineering Terms' },
@@ -135,9 +134,7 @@ const Dashboard = () => {
       limitToday.setHours(9, 0, 0);
       let nextFriday = new Date();
       nextFriday.setDate(now.getDate() + (5 + 7 - now.getDay()) % 7);
-      if (now.getDay() === 5 && now > limitToday) {
-        nextFriday.setDate(nextFriday.getDate() + 7);
-      }
+      if (now.getDay() === 5 && now > limitToday) nextFriday.setDate(nextFriday.getDate() + 7);
       return nextFriday.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric' });
     };
 
@@ -156,8 +153,8 @@ const Dashboard = () => {
       <div className="max-w-5xl mx-auto">
         <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight italic uppercase">LMS Dashboard</h1>
-            <p className="text-slate-500">Swiss business trip goals tracking.</p>
+            <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight italic uppercase">Swiss Mission Dashboard</h1>
+            <p className="text-slate-500">Targeting B1 Proficiency for February 2027.</p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-3">
             <Clock className="text-blue-600" />
@@ -169,7 +166,7 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-600">
-            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Target: B1 Level</h3>
+            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Overall Progress</h3>
             <p className="text-3xl font-black text-slate-800 mt-2">{currentPercent}%</p>
             <div className="w-full bg-slate-100 rounded-full h-3 mt-4">
               <div className="bg-blue-600 h-3 rounded-full transition-all duration-700" style={{ width: `${currentPercent}%` }}></div>
@@ -189,10 +186,10 @@ const Dashboard = () => {
 
         <div className="bg-white rounded-xl shadow-md border border-slate-200 p-6">
           <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <CheckCircle2 className="text-blue-600" size={24} /> Current Focus (Next 7 Days)
+            <CheckCircle2 className="text-blue-600" size={24} /> Weekly Schedule
           </h2>
           <div className="space-y-4">
-            {upcoming.length > 0 ? upcoming.map((task, idx) => (
+            {upcoming.map((task, idx) => (
               <div key={idx} className={`p-4 rounded-xl border flex items-center justify-between ${task.completed ? 'bg-green-50 border-green-200 opacity-60' : 'bg-blue-50 border-blue-100'}`}>
                 <div className="flex items-center">
                   <div className="w-14 h-14 bg-blue-600 text-white rounded-lg flex flex-col items-center justify-center font-bold shrink-0">
@@ -205,40 +202,41 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <button 
-                  onClick={() => setManualTasks([...manualTasks.filter(t => t.date !== task.date), { ...task, completed: !task.completed }])}
+                  onClick={() => {
+                    const newTasks = manualTasks.filter(t => t.date !== task.date);
+                    setManualTasks([...newTasks, { ...task, completed: !task.completed }]);
+                  }}
                   className="text-blue-600 hover:scale-110 transition-transform"
                 >
                   {task.completed ? <CheckCircle2 className="text-green-600" size={32} /> : <Circle size={32} className="text-blue-200" />}
                 </button>
               </div>
-            )) : (
-              <div className="text-center py-8">
-                <p className="text-slate-400 italic font-medium">No tasks scheduled for the moment.</p>
-              </div>
-            )}
+            ))}
           </div>
         </div>
       </div>
     );
   };
 
+  // ... (RenderRoadmap e EditTaskForm seguem a mesma lógica, mantendo consistência) ...
+
   const RenderRoadmap = () => {
     const phases = [
-      { id: 1, title: 'Foundation', color: 'border-blue-600', text: 'text-blue-600', bg: 'bg-blue-600', months: ['April', 'May', 'June', 'July'] },
-      { id: 2, title: 'Fluency', color: 'border-orange-500', text: 'text-orange-500', bg: 'bg-orange-500', months: ['August', 'September', 'October', 'November'] },
-      { id: 3, title: 'Mission Ready', color: 'border-red-600', text: 'text-red-600', bg: 'bg-red-600', months: ['December', 'January', 'February'] }
+      { id: 1, title: 'Phase 1: Foundation (A1)', color: 'border-blue-600', text: 'text-blue-600', bg: 'bg-blue-600', months: ['April', 'May', 'June', 'July'] },
+      { id: 2, title: 'Phase 2: Construction (A2)', color: 'border-orange-500', text: 'text-orange-500', bg: 'bg-orange-500', months: ['August', 'September', 'October', 'November'] },
+      { id: 3, title: 'Phase 3: Independence (B1)', color: 'border-red-600', text: 'text-red-600', bg: 'bg-red-600', months: ['December', 'January', 'February'] }
     ];
     return (
       <div className="max-w-4xl mx-auto pb-10">
         <header className="mb-10 text-slate-800">
-          <h1 className="text-3xl font-extrabold tracking-tight uppercase italic">Master Roadmap</h1>
-          <p className="text-slate-500">Grammar & Fluency Strategy</p>
+          <h1 className="text-3xl font-extrabold tracking-tight uppercase italic">Swiss Mission Roadmap</h1>
+          <p className="text-slate-500">English Proficiency Strategy</p>
         </header>
         {phases.map(phase => (
           <div key={phase.id} className={`relative pl-10 border-l-4 ${phase.color} mb-12`}>
             <div className={`absolute -left-3.5 top-0 w-6 h-6 rounded-full border-4 border-white shadow-sm ${phase.bg}`}></div>
             <div className="flex justify-between items-center cursor-pointer mb-6" onClick={() => handlePhaseChange(phase.id)}>
-              <h3 className={`text-xl font-black uppercase tracking-tight ${phase.text}`}>Phase {phase.id}: {phase.title}</h3>
+              <h3 className={`text-xl font-black uppercase tracking-tight ${phase.text}`}>{phase.title}</h3>
               {expandedPhase === phase.id ? <ChevronUp className="text-slate-400" /> : <ChevronDown className="text-slate-400" />}
             </div>
             {expandedPhase === phase.id && (
@@ -266,7 +264,7 @@ const Dashboard = () => {
                           </div>
                           <div className="flex-1">
                             {editingId === dayStr ? (
-                              <EditTaskForm task={task} dayStr={dayStr} onSave={(newT, newF) => {
+                              <EditTaskForm task={task} onSave={(newT, newF) => {
                                   setManualTasks([...manualTasks.filter(t => t.date !== dayStr), { date: dayStr, title: newT, focus: newF, completed: false }]);
                                   setEditingId(null);
                                 }} onCancel={() => setEditingId(null)} />
@@ -279,7 +277,10 @@ const Dashboard = () => {
                                 <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <button onClick={() => setEditingId(dayStr)} className="p-2 text-slate-300 hover:text-blue-600"><Edit3 size={18}/></button>
                                   {task && (
-                                    <button onClick={() => setManualTasks([...manualTasks.filter(t => t.date !== dayStr), { ...task, date: dayStr, completed: !task.completed }])} className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${task.completed ? 'bg-green-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white'}`}>
+                                    <button onClick={() => {
+                                        const newTasks = manualTasks.filter(t => t.date !== dayStr);
+                                        setManualTasks([...newTasks, { ...task, date: dayStr, completed: !task.completed }]);
+                                    }} className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${task.completed ? 'bg-green-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white'}`}>
                                       {task.completed ? 'Done' : 'Confirm'}
                                     </button>
                                   )}
@@ -296,6 +297,27 @@ const Dashboard = () => {
             )}
           </div>
         ))}
+      </div>
+    );
+  };
+
+  const EditTaskForm = ({ task, onSave, onCancel }) => {
+    const [selectedType, setSelectedType] = useState(task?.title === 'English Class (Private)' ? 'class' : task?.title === 'Grammar Focus' ? 'grammar' : 'other');
+    const [customTitle, setCustomTitle] = useState(selectedType === 'other' ? task?.title || '' : '');
+    const [focus, setFocus] = useState(task?.focus || '');
+    return (
+      <div className="space-y-2 p-2 bg-slate-50 rounded-lg border border-blue-100">
+        <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="p-2 border rounded bg-white text-sm font-bold w-full">
+          <option value="class">English Class (Private)</option>
+          <option value="grammar">Grammar Focus</option>
+          <option value="other">Custom Task</option>
+        </select>
+        {selectedType === 'other' && <input className="p-2 border rounded font-bold text-sm w-full" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} />}
+        <input className="p-2 border rounded text-sm w-full" value={focus} onChange={(e) => setFocus(e.target.value)} />
+        <div className="flex space-x-2 pt-1">
+          <button onClick={() => onSave(selectedType === 'class' ? 'English Class (Private)' : selectedType === 'grammar' ? 'Grammar Focus' : customTitle, focus)} className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-black">SAVE</button>
+          <button onClick={onCancel} className="text-slate-400 text-xs font-bold">CANCEL</button>
+        </div>
       </div>
     );
   };
@@ -318,41 +340,6 @@ const Dashboard = () => {
       <main className="flex-1 overflow-y-auto p-12 bg-gray-50">
           {activeTab === 'dashboard' ? <RenderDashboard /> : <RenderRoadmap />}
       </main>
-    </div>
-  );
-};
-
-const EditTaskForm = ({ task, onSave, onCancel }) => {
-  const [selectedType, setSelectedType] = useState(task?.title === 'English Class (Private)' ? 'class' : task?.title === 'Grammar Focus' ? 'grammar' : 'other');
-  const [customTitle, setCustomTitle] = useState(selectedType === 'other' ? task?.title || '' : '');
-  const [focus, setFocus] = useState(task?.focus || '');
-  return (
-    <div className="space-y-2 p-2 bg-slate-50 rounded-lg border border-blue-100">
-      <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-black uppercase text-slate-400">Task Type</label>
-        <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="p-2 border rounded bg-white text-sm font-bold w-full">
-          <option value="class">English Class (Private)</option>
-          <option value="grammar">Grammar Focus</option>
-          <option value="other">Custom Task</option>
-        </select>
-      </div>
-      {selectedType === 'other' && (
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-black uppercase text-slate-400">Custom Title</label>
-          <input className="p-2 border rounded font-bold text-sm w-full" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} />
-        </div>
-      )}
-      <div className="flex flex-col gap-1">
-        <label className="text-[10px] font-black uppercase text-slate-400">Study Focus</label>
-        <input className="p-2 border rounded text-sm w-full" value={focus} onChange={(e) => setFocus(e.target.value)} />
-      </div>
-      <div className="flex space-x-2 pt-1">
-        <button onClick={() => {
-            const finalTitle = selectedType === 'class' ? 'English Class (Private)' : selectedType === 'grammar' ? 'Grammar Focus' : customTitle;
-            onSave(finalTitle, focus);
-          }} className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-black">SAVE</button>
-        <button onClick={onCancel} className="text-slate-400 text-xs font-bold">CANCEL</button>
-      </div>
     </div>
   );
 };
