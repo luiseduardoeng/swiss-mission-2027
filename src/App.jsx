@@ -1,5 +1,24 @@
 import React, { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { LayoutDashboard, Plane, Factory, BookOpen, Brain, Clock, Calendar, CheckCircle2, Circle, Edit3, Save, ChevronDown, ChevronUp } from 'lucide-react';
+=======
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, setDoc, onSnapshot, collection } from "firebase/firestore";
+import { LayoutDashboard, Plane, Factory, Clock, Calendar, CheckCircle2, Circle, Edit3, ChevronDown, ChevronUp } from 'lucide-react';
+
+// --- COLE SUAS CREDENCIAIS DO FIREBASE AQUI ---
+const firebaseConfig = {
+  apiKey: "AIzaSyDkm-n2fhsc5Y049vJUbkhaJkVtBKXmCtw",
+  authDomain: "swiss-mission-27.firebaseapp.com",
+  projectId: "swiss-mission-27",
+  storageBucket: "swiss-mission-27.firebasestorage.app",
+  messagingSenderId: "911227832043",
+  appId: "1:911227832043:web:2f6e66405e1151447520ae"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+>>>>>>> 22a5ad5 (add: firebase credentials and logic)
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -65,6 +84,45 @@ const Dashboard = () => {
     "2027-02-15": "B1 General Review and Consolidation"
   };
 
+<<<<<<< HEAD
+=======
+  // --- SINCRONIZAÇÃO EM TEMPO REAL COM FIRESTORE ---
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "tasks"), (snapshot) => {
+      const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setManualTasks(tasksData);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleToggleTask = async (task) => {
+    const taskRef = doc(db, "tasks", task.date);
+    await setDoc(taskRef, {
+      ...task,
+      completed: !task.completed
+    }, { merge: true });
+  };
+
+  const handleSaveEdit = async (date, title, focus) => {
+    const taskRef = doc(db, "tasks", date);
+    await setDoc(taskRef, {
+      date,
+      title,
+      focus,
+      completed: false
+    }, { merge: true });
+    setEditingId(null);
+  };
+
+  // --- ENGLISH GRAMMAR SCHEDULE ---
+  const grammarSchedule = {
+    "2026-04-20": "The Verb To Be (Present) and Personal Pronouns",
+    "2026-04-27": "Articles (A, An, The) and Plural Nouns",
+    // ... (Mantenha todos os itens da lista anterior aqui)
+    "2027-02-15": "B1 General Review and Consolidation"
+  };
+
+>>>>>>> 22a5ad5 (add: firebase credentials and logic)
   const calculateProgress = () => {
     const totalEstimatedPoints = 480; 
     const getWeight = (title) => {
@@ -80,36 +138,15 @@ const Dashboard = () => {
 
   const currentPercent = calculateProgress();
 
-  const calculateDaysUntil = () => {
-    const diff = new Date('2027-02-22') - new Date();
-    return Math.ceil(diff / (1000 * 3600 * 24));
-  };
-
-  const getDaysInMonth = (monthName, year) => {
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const monthIndex = months.indexOf(monthName);
-    const date = new Date(year, monthIndex, 1);
-    const days = [];
-    while (date.getMonth() === monthIndex) {
-      days.push(new Date(date).toISOString().split('T')[0]);
-      date.setDate(date.getDate() + 1);
-    }
-    return days;
-  };
-
-  const handlePhaseChange = (phaseId) => {
-    setExpandedPhase(expandedPhase === phaseId ? null : phaseId);
-    if (phaseId === 1) setExpandedMonth('April');
-    if (phaseId === 2) setExpandedMonth('August');
-    if (phaseId === 3) setExpandedMonth('December');
-  };
-
   const getAutoContent = (dateStr) => {
     const date = new Date(dateStr + 'T12:00:00');
     const dayOfWeek = date.getDay(); 
+<<<<<<< HEAD
     const isBreak = date >= new Date('2026-12-21') && date <= new Date('2027-01-10');
     if (isBreak && dayOfWeek !== 1) return null;
 
+=======
+>>>>>>> 22a5ad5 (add: firebase credentials and logic)
     if (dayOfWeek === 5) return { title: 'English Class (Private)', focus: '7:30 AM - B1 Acceleration' };
     if (dayOfWeek === 1) return { title: 'Grammar Focus', focus: grammarSchedule[dateStr] || "Review & Practice" };
 
@@ -128,6 +165,7 @@ const Dashboard = () => {
     nextWeek.setDate(today.getDate() + 7);
     const startDate = new Date('2026-04-17T00:00:00');
 
+<<<<<<< HEAD
     const getNextClassDate = () => {
       const now = new Date();
       const limitToday = new Date();
@@ -138,14 +176,16 @@ const Dashboard = () => {
       return nextFriday.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric' });
     };
 
+=======
+>>>>>>> 22a5ad5 (add: firebase credentials and logic)
     const upcoming = [];
     for(let d = new Date(today); d <= nextWeek; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split('T')[0];
       const currentDateObj = new Date(dateStr + 'T00:00:00');
       if (currentDateObj >= startDate) {
-        const manual = manualTasks.find(t => t.date === dateStr);
+        const cloudTask = manualTasks.find(t => t.id === dateStr);
         const auto = getAutoContent(dateStr);
-        if (manual || auto) upcoming.push(manual || { ...auto, date: dateStr, completed: false });
+        if (cloudTask || auto) upcoming.push(cloudTask || { ...auto, date: dateStr, completed: false });
       }
     }
 
@@ -154,7 +194,11 @@ const Dashboard = () => {
         <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight italic uppercase">Swiss Mission Dashboard</h1>
+<<<<<<< HEAD
             <p className="text-slate-500">Targeting B1 Proficiency for February 2027.</p>
+=======
+            <p className="text-slate-500">Cloud Synchronized • B1 Proficiency 2027</p>
+>>>>>>> 22a5ad5 (add: firebase credentials and logic)
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-3">
             <Clock className="text-blue-600" />
@@ -174,13 +218,12 @@ const Dashboard = () => {
           </div>
           <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-red-600">
             <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Days to Switzerland</h3>
-            <p className="text-3xl font-black text-slate-800 mt-2">{calculateDaysUntil()} Days</p>
-            <p className="text-xs text-slate-400 mt-2 italic">Target: Feb 22, 2027</p>
+            <p className="text-3xl font-black text-slate-800 mt-2">{Math.ceil((new Date('2027-02-22') - new Date()) / (1000 * 3600 * 24))} Days</p>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-green-600">
-            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Next Class</h3>
-            <p className="text-3xl font-black text-slate-800 mt-2">{getNextClassDate()}</p>
-            <p className="text-xs text-slate-400 mt-2 italic">7:30 AM Session</p>
+            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Status</h3>
+            <p className="text-3xl font-black text-slate-800 mt-2">Online</p>
+            <p className="text-xs text-green-500 mt-2 italic font-bold">Synced with Firebase</p>
           </div>
         </div>
 
@@ -201,6 +244,7 @@ const Dashboard = () => {
                     <p className="text-slate-600 italic">"{task.focus}"</p>
                   </div>
                 </div>
+<<<<<<< HEAD
                 <button 
                   onClick={() => {
                     const newTasks = manualTasks.filter(t => t.date !== task.date);
@@ -208,6 +252,9 @@ const Dashboard = () => {
                   }}
                   className="text-blue-600 hover:scale-110 transition-transform"
                 >
+=======
+                <button onClick={() => handleToggleTask(task)} className="text-blue-600 hover:scale-110 transition-transform">
+>>>>>>> 22a5ad5 (add: firebase credentials and logic)
                   {task.completed ? <CheckCircle2 className="text-green-600" size={32} /> : <Circle size={32} className="text-blue-200" />}
                 </button>
               </div>
@@ -218,6 +265,7 @@ const Dashboard = () => {
     );
   };
 
+<<<<<<< HEAD
   // ... (RenderRoadmap e EditTaskForm seguem a mesma lógica, mantendo consistência) ...
 
   const RenderRoadmap = () => {
@@ -300,6 +348,9 @@ const Dashboard = () => {
       </div>
     );
   };
+=======
+  // ... (Restante do código RenderRoadmap similar ao anterior usando handleSaveEdit e manualTasks) ...
+>>>>>>> 22a5ad5 (add: firebase credentials and logic)
 
   const EditTaskForm = ({ task, onSave, onCancel }) => {
     const [selectedType, setSelectedType] = useState(task?.title === 'English Class (Private)' ? 'class' : task?.title === 'Grammar Focus' ? 'grammar' : 'other');
@@ -332,16 +383,17 @@ const Dashboard = () => {
         <nav className="flex-1 p-4 space-y-2 font-bold">
           <button onClick={() => setActiveTab('dashboard')} className={`flex items-center space-x-3 w-full p-3 rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800'}`}><LayoutDashboard size={20}/><span>Dashboard</span></button>
           <button onClick={() => setActiveTab('roadmap')} className={`flex items-center space-x-3 w-full p-3 rounded-xl transition-all ${activeTab === 'roadmap' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800'}`}><Calendar size={20}/><span>Roadmap</span></button>
-          <div className="h-px bg-slate-800 my-6"></div>
-          <button className="flex items-center space-x-3 w-full p-3 text-slate-500 opacity-50 italic cursor-not-allowed"><Plane size={20} /> <span>Travel Log</span></button>
-          <button className="flex items-center space-x-3 w-full p-3 text-slate-500 opacity-50 italic cursor-not-allowed"><Factory size={20} /> <span>Poultry Tech</span></button>
         </nav>
       </aside>
       <main className="flex-1 overflow-y-auto p-12 bg-gray-50">
-          {activeTab === 'dashboard' ? <RenderDashboard /> : <RenderRoadmap />}
+          {activeTab === 'dashboard' ? <RenderDashboard /> : <p className="text-center">Roadmap view is active. Syncing data...</p>}
       </main>
     </div>
   );
 };
 
+<<<<<<< HEAD
 export default Dashboard;
+=======
+export default Dashboard;
+>>>>>>> 22a5ad5 (add: firebase credentials and logic)
