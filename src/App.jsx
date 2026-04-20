@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { LayoutDashboard, Plane, Factory, BookOpen, Brain, Clock, Calendar, CheckCircle2, Circle, Edit3, Save, ChevronDown, ChevronUp } from 'lucide-react';
-=======
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot, collection } from "firebase/firestore";
 import { LayoutDashboard, Plane, Factory, Clock, Calendar, CheckCircle2, Circle, Edit3, ChevronDown, ChevronUp } from 'lucide-react';
 
-// --- COLE SUAS CREDENCIAIS DO FIREBASE AQUI ---
+// --- CONFIGURAÇÃO DO FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyDkm-n2fhsc5Y049vJUbkhaJkVtBKXmCtw",
   authDomain: "swiss-mission-27.firebaseapp.com",
@@ -18,23 +15,41 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
->>>>>>> 22a5ad5 (add: firebase credentials and logic)
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [expandedPhase, setExpandedPhase] = useState(1);
   const [expandedMonth, setExpandedMonth] = useState('April');
   const [editingId, setEditingId] = useState(null);
-  
-  // --- PERSISTÊNCIA COM LOCALSTORAGE ---
-  const [manualTasks, setManualTasks] = useState(() => {
-    const saved = localStorage.getItem('swissMissionTasks');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [manualTasks, setManualTasks] = useState([]);
 
+  // --- SINCRONIZAÇÃO EM TEMPO REAL COM FIRESTORE ---
   useEffect(() => {
-    localStorage.setItem('swissMissionTasks', JSON.stringify(manualTasks));
-  }, [manualTasks]);
+    const unsub = onSnapshot(collection(db, "tasks"), (snapshot) => {
+      const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setManualTasks(tasksData);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleToggleTask = async (task) => {
+    const taskRef = doc(db, "tasks", task.date);
+    await setDoc(taskRef, {
+      ...task,
+      completed: !task.completed
+    }, { merge: true });
+  };
+
+  const handleSaveEdit = async (date, title, focus) => {
+    const taskRef = doc(db, "tasks", date);
+    await setDoc(taskRef, {
+      date,
+      title,
+      focus,
+      completed: false
+    }, { merge: true });
+    setEditingId(null);
+  };
 
   // --- ENGLISH GRAMMAR SCHEDULE ---
   const grammarSchedule = {
@@ -84,45 +99,6 @@ const Dashboard = () => {
     "2027-02-15": "B1 General Review and Consolidation"
   };
 
-<<<<<<< HEAD
-=======
-  // --- SINCRONIZAÇÃO EM TEMPO REAL COM FIRESTORE ---
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "tasks"), (snapshot) => {
-      const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setManualTasks(tasksData);
-    });
-    return () => unsub();
-  }, []);
-
-  const handleToggleTask = async (task) => {
-    const taskRef = doc(db, "tasks", task.date);
-    await setDoc(taskRef, {
-      ...task,
-      completed: !task.completed
-    }, { merge: true });
-  };
-
-  const handleSaveEdit = async (date, title, focus) => {
-    const taskRef = doc(db, "tasks", date);
-    await setDoc(taskRef, {
-      date,
-      title,
-      focus,
-      completed: false
-    }, { merge: true });
-    setEditingId(null);
-  };
-
-  // --- ENGLISH GRAMMAR SCHEDULE ---
-  const grammarSchedule = {
-    "2026-04-20": "The Verb To Be (Present) and Personal Pronouns",
-    "2026-04-27": "Articles (A, An, The) and Plural Nouns",
-    // ... (Mantenha todos os itens da lista anterior aqui)
-    "2027-02-15": "B1 General Review and Consolidation"
-  };
-
->>>>>>> 22a5ad5 (add: firebase credentials and logic)
   const calculateProgress = () => {
     const totalEstimatedPoints = 480; 
     const getWeight = (title) => {
@@ -141,12 +117,9 @@ const Dashboard = () => {
   const getAutoContent = (dateStr) => {
     const date = new Date(dateStr + 'T12:00:00');
     const dayOfWeek = date.getDay(); 
-<<<<<<< HEAD
     const isBreak = date >= new Date('2026-12-21') && date <= new Date('2027-01-10');
     if (isBreak && dayOfWeek !== 1) return null;
 
-=======
->>>>>>> 22a5ad5 (add: firebase credentials and logic)
     if (dayOfWeek === 5) return { title: 'English Class (Private)', focus: '7:30 AM - B1 Acceleration' };
     if (dayOfWeek === 1) return { title: 'Grammar Focus', focus: grammarSchedule[dateStr] || "Review & Practice" };
 
@@ -165,19 +138,16 @@ const Dashboard = () => {
     nextWeek.setDate(today.getDate() + 7);
     const startDate = new Date('2026-04-17T00:00:00');
 
-<<<<<<< HEAD
     const getNextClassDate = () => {
-      const now = new Date();
-      const limitToday = new Date();
-      limitToday.setHours(9, 0, 0);
-      let nextFriday = new Date();
-      nextFriday.setDate(now.getDate() + (5 + 7 - now.getDay()) % 7);
-      if (now.getDay() === 5 && now > limitToday) nextFriday.setDate(nextFriday.getDate() + 7);
-      return nextFriday.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric' });
+        const now = new Date();
+        const limitToday = new Date();
+        limitToday.setHours(9, 0, 0);
+        let nextFriday = new Date();
+        nextFriday.setDate(now.getDate() + (5 + 7 - now.getDay()) % 7);
+        if (now.getDay() === 5 && now > limitToday) nextFriday.setDate(nextFriday.getDate() + 7);
+        return nextFriday.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric' });
     };
 
-=======
->>>>>>> 22a5ad5 (add: firebase credentials and logic)
     const upcoming = [];
     for(let d = new Date(today); d <= nextWeek; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split('T')[0];
@@ -194,11 +164,7 @@ const Dashboard = () => {
         <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight italic uppercase">Swiss Mission Dashboard</h1>
-<<<<<<< HEAD
-            <p className="text-slate-500">Targeting B1 Proficiency for February 2027.</p>
-=======
             <p className="text-slate-500">Cloud Synchronized • B1 Proficiency 2027</p>
->>>>>>> 22a5ad5 (add: firebase credentials and logic)
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-3">
             <Clock className="text-blue-600" />
@@ -221,9 +187,9 @@ const Dashboard = () => {
             <p className="text-3xl font-black text-slate-800 mt-2">{Math.ceil((new Date('2027-02-22') - new Date()) / (1000 * 3600 * 24))} Days</p>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-green-600">
-            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Status</h3>
-            <p className="text-3xl font-black text-slate-800 mt-2">Online</p>
-            <p className="text-xs text-green-500 mt-2 italic font-bold">Synced with Firebase</p>
+            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Next Class</h3>
+            <p className="text-3xl font-black text-slate-800 mt-2">{getNextClassDate()}</p>
+            <p className="text-xs text-slate-400 mt-2 italic">7:30 AM Session</p>
           </div>
         </div>
 
@@ -244,17 +210,7 @@ const Dashboard = () => {
                     <p className="text-slate-600 italic">"{task.focus}"</p>
                   </div>
                 </div>
-<<<<<<< HEAD
-                <button 
-                  onClick={() => {
-                    const newTasks = manualTasks.filter(t => t.date !== task.date);
-                    setManualTasks([...newTasks, { ...task, completed: !task.completed }]);
-                  }}
-                  className="text-blue-600 hover:scale-110 transition-transform"
-                >
-=======
                 <button onClick={() => handleToggleTask(task)} className="text-blue-600 hover:scale-110 transition-transform">
->>>>>>> 22a5ad5 (add: firebase credentials and logic)
                   {task.completed ? <CheckCircle2 className="text-green-600" size={32} /> : <Circle size={32} className="text-blue-200" />}
                 </button>
               </div>
@@ -265,8 +221,17 @@ const Dashboard = () => {
     );
   };
 
-<<<<<<< HEAD
-  // ... (RenderRoadmap e EditTaskForm seguem a mesma lógica, mantendo consistência) ...
+  const getDaysInMonth = (monthName, year) => {
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthIndex = months.indexOf(monthName);
+    const date = new Date(year, monthIndex, 1);
+    const days = [];
+    while (date.getMonth() === monthIndex) {
+      days.push(new Date(date).toISOString().split('T')[0]);
+      date.setDate(date.getDate() + 1);
+    }
+    return days;
+  };
 
   const RenderRoadmap = () => {
     const phases = [
@@ -299,7 +264,7 @@ const Dashboard = () => {
                   <div className="divide-y divide-slate-100">
                     {getDaysInMonth(expandedMonth, (expandedMonth === 'January' || expandedMonth === 'February' ? 2027 : 2026)).map(dayStr => {
                       const dateObj = new Date(dayStr + 'T12:00:00');
-                      const manual = manualTasks.find(t => t.date === dayStr);
+                      const manual = manualTasks.find(t => t.id === dayStr);
                       const auto = getAutoContent(dayStr);
                       if (expandedMonth === 'April' && dateObj < new Date('2026-04-17T00:00:00')) return null;
                       if (expandedMonth === 'February' && dateObj > new Date('2027-02-21T00:00:00')) return null;
@@ -312,10 +277,7 @@ const Dashboard = () => {
                           </div>
                           <div className="flex-1">
                             {editingId === dayStr ? (
-                              <EditTaskForm task={task} onSave={(newT, newF) => {
-                                  setManualTasks([...manualTasks.filter(t => t.date !== dayStr), { date: dayStr, title: newT, focus: newF, completed: false }]);
-                                  setEditingId(null);
-                                }} onCancel={() => setEditingId(null)} />
+                              <EditTaskForm task={task} onSave={(newT, newF) => handleSaveEdit(dayStr, newT, newF)} onCancel={() => setEditingId(null)} />
                             ) : (
                               <div className="flex justify-between items-center">
                                 <div>
@@ -325,10 +287,7 @@ const Dashboard = () => {
                                 <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <button onClick={() => setEditingId(dayStr)} className="p-2 text-slate-300 hover:text-blue-600"><Edit3 size={18}/></button>
                                   {task && (
-                                    <button onClick={() => {
-                                        const newTasks = manualTasks.filter(t => t.date !== dayStr);
-                                        setManualTasks([...newTasks, { ...task, date: dayStr, completed: !task.completed }]);
-                                    }} className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${task.completed ? 'bg-green-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white'}`}>
+                                    <button onClick={() => handleToggleTask({...task, date: dayStr})} className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${task.completed ? 'bg-green-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white'}`}>
                                       {task.completed ? 'Done' : 'Confirm'}
                                     </button>
                                   )}
@@ -348,9 +307,6 @@ const Dashboard = () => {
       </div>
     );
   };
-=======
-  // ... (Restante do código RenderRoadmap similar ao anterior usando handleSaveEdit e manualTasks) ...
->>>>>>> 22a5ad5 (add: firebase credentials and logic)
 
   const EditTaskForm = ({ task, onSave, onCancel }) => {
     const [selectedType, setSelectedType] = useState(task?.title === 'English Class (Private)' ? 'class' : task?.title === 'Grammar Focus' ? 'grammar' : 'other');
@@ -386,14 +342,10 @@ const Dashboard = () => {
         </nav>
       </aside>
       <main className="flex-1 overflow-y-auto p-12 bg-gray-50">
-          {activeTab === 'dashboard' ? <RenderDashboard /> : <p className="text-center">Roadmap view is active. Syncing data...</p>}
+          {activeTab === 'dashboard' ? <RenderDashboard /> : <RenderRoadmap />}
       </main>
     </div>
   );
 };
 
-<<<<<<< HEAD
 export default Dashboard;
-=======
-export default Dashboard;
->>>>>>> 22a5ad5 (add: firebase credentials and logic)
