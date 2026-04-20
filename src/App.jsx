@@ -8,18 +8,66 @@ const Dashboard = () => {
   const [editingId, setEditingId] = useState(null);
   const [manualTasks, setManualTasks] = useState([]);
 
-  // --- PROGRESS CALCULATION LOGIC ---
+  // --- MAPA DO CRONOGRAMA DE GRAMÁTICA (SEGUNDAS-FEIRAS) ---
+  const grammarSchedule = {
+    // Fase 1
+    "2026-04-20": "O Verbo To Be (Presente) e Pronomes Pessoais",
+    "2026-04-27": "Artigos (A, An, The) e Plural dos Substantivos",
+    "2026-05-04": "Pronomes Demonstrativos e Adjetivos Possessivos",
+    "2026-05-11": "Present Simple (Afirmativa) - Rotinas",
+    "2026-05-18": "Present Simple (Neg/Int) - Do/Does",
+    "2026-05-25": "Advérbios de Frequência",
+    "2026-06-01": "There is e There are (Existência)",
+    "2026-06-08": "Preposições de Lugar (In, On, At)",
+    "2026-06-15": "Preposições de Tempo (In, On, At)",
+    "2026-06-22": "Substantivos Contáveis e Incontáveis",
+    "2026-06-29": "Quantificadores (Some, Any, Much, Many)",
+    "2026-07-06": "Verbo Modal Can e Can't",
+    "2026-07-13": "Present Continuous (Afirmativa)",
+    "2026-07-20": "Present Continuous (Neg/Int)",
+    "2026-07-27": "Verbo To Be no Passado (Was / Were)",
+    // Fase 2
+    "2026-08-03": "Past Simple - Regulares e Pronúncia -ed",
+    "2026-08-10": "Past Simple - Irregulares comuns",
+    "2026-08-17": "Past Simple - Neg/Int com Did",
+    "2026-08-24": "Past Continuous",
+    "2026-08-31": "Past Simple vs. Past Continuous",
+    "2026-09-07": "Futuro com Going to",
+    "2026-09-14": "Futuro com Will",
+    "2026-09-21": "Adjetivos Comparativos",
+    "2026-09-28": "Adjetivos Superlativos",
+    "2026-10-05": "Pronomes Objetos (Me, you, him, her)",
+    "2026-10-12": "Pronomes Possessivos (Mine, yours)",
+    "2026-10-19": "Advérbios de Modo (Quickly, well)",
+    "2026-10-26": "Have to e Don't have to",
+    "2026-11-02": "Should e Shouldn't",
+    "2026-11-09": "Orações Relativas Básicas",
+    // Fase 3
+    "2026-11-16": "Present Perfect - Introdução",
+    "2026-11-23": "Present Perfect - Just, Already e Yet",
+    "2026-11-30": "Present Perfect - Ever e Never",
+    "2026-12-07": "Present Perfect - For e Since",
+    "2026-12-14": "Present Perfect vs. Past Simple",
+    "2026-12-21": "Zero e First Conditional",
+    "2026-12-28": "Second Conditional",
+    "2027-01-04": "Verbos Modais de Dedução",
+    "2027-01-11": "Voz Passiva (Passive Voice)",
+    "2027-01-18": "Used to (Hábitos passados)",
+    "2027-01-25": "Reported Speech (Discurso Indireto)",
+    "2027-02-01": "Gerúndio (-ing) vs. Infinitivo",
+    "2027-02-08": "Phrasal Verbs Essenciais",
+    "2027-02-15": "Revisão Geral B1 e Consolidação"
+  };
+
   const calculateProgress = () => {
     const getWeight = (title) => {
       if (title.includes('English Class')) return 3;
       if (title.includes('Grammar Focus')) return 2;
       return 1;
     };
-
     const completedPoints = manualTasks
       .filter(t => t.completed)
       .reduce((acc, t) => acc + getWeight(t.title), 0);
-
     const totalEstimatedPoints = 480; 
     return Math.min(100, Math.round((completedPoints / totalEstimatedPoints) * 100));
   };
@@ -54,12 +102,19 @@ const Dashboard = () => {
     const date = new Date(dateStr + 'T12:00:00');
     const dayOfWeek = date.getDay(); 
     const isBreak = date >= new Date('2026-12-21') && date <= new Date('2027-01-10');
-    if (isBreak) return null;
+    if (isBreak && dayOfWeek !== 1) return null; // Mantém apenas gramática se quiser, ou null total
 
     if (dayOfWeek === 5) return { title: 'English Class (Private)', focus: '7:30 AM - B1 Acceleration' };
     
+    // Lógica Segundas-Feiras (Grammar Focus Dinâmico)
+    if (dayOfWeek === 1) {
+        return { 
+            title: 'Grammar Focus', 
+            focus: grammarSchedule[dateStr] || "Review & Practice" 
+        };
+    }
+
     const contentMap = {
-      1: { title: 'Grammar Focus', focus: 'Verb Tenses & Sentence Structure' },
       2: { title: 'Technical Vocabulary', focus: 'Poultry Industry & Engineering Terms' },
       3: { title: 'Lesson Exercises', focus: 'Reviewing and solving class activities' },
       4: { title: 'Listening Practice', focus: 'Swiss/International English Accents' }
@@ -72,23 +127,17 @@ const Dashboard = () => {
     today.setHours(0,0,0,0);
     const nextWeek = new Date();
     nextWeek.setDate(today.getDate() + 7);
-
     const startDate = new Date('2026-04-17T00:00:00');
 
-    // Lógica para calcular a data da próxima sexta-feira de aula
     const getNextClassDate = () => {
       const now = new Date();
-      // Se hoje for sexta e já passou das 09:00 (fim da aula), pula para a próxima
       const limitToday = new Date();
       limitToday.setHours(9, 0, 0);
-      
       let nextFriday = new Date();
       nextFriday.setDate(now.getDate() + (5 + 7 - now.getDay()) % 7);
-      
       if (now.getDay() === 5 && now > limitToday) {
         nextFriday.setDate(nextFriday.getDate() + 7);
       }
-      
       return nextFriday.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric' });
     };
 
@@ -96,7 +145,6 @@ const Dashboard = () => {
     for(let d = new Date(today); d <= nextWeek; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split('T')[0];
       const currentDateObj = new Date(dateStr + 'T00:00:00');
-
       if (currentDateObj >= startDate) {
         const manual = manualTasks.find(t => t.date === dateStr);
         const auto = getAutoContent(dateStr);
@@ -165,7 +213,7 @@ const Dashboard = () => {
               </div>
             )) : (
               <div className="text-center py-8">
-                <p className="text-slate-400 italic font-medium">Your study plan kicks off on April 17th!</p>
+                <p className="text-slate-400 italic font-medium">No tasks scheduled for the moment.</p>
               </div>
             )}
           </div>
@@ -180,14 +228,12 @@ const Dashboard = () => {
       { id: 2, title: 'Fluency', color: 'border-orange-500', text: 'text-orange-500', bg: 'bg-orange-500', months: ['August', 'September', 'October', 'November'] },
       { id: 3, title: 'Mission Ready', color: 'border-red-600', text: 'text-red-600', bg: 'bg-red-600', months: ['December', 'January', 'February'] }
     ];
-
     return (
       <div className="max-w-4xl mx-auto pb-10">
         <header className="mb-10 text-slate-800">
           <h1 className="text-3xl font-extrabold tracking-tight uppercase italic">Master Roadmap</h1>
-          <p className="text-slate-500">Curriculum strategy until Feb 2027</p>
+          <p className="text-slate-500">Grammar & Fluency Strategy</p>
         </header>
-
         {phases.map(phase => (
           <div key={phase.id} className={`relative pl-10 border-l-4 ${phase.color} mb-12`}>
             <div className={`absolute -left-3.5 top-0 w-6 h-6 rounded-full border-4 border-white shadow-sm ${phase.bg}`}></div>
@@ -195,7 +241,6 @@ const Dashboard = () => {
               <h3 className={`text-xl font-black uppercase tracking-tight ${phase.text}`}>Phase {phase.id}: {phase.title}</h3>
               {expandedPhase === phase.id ? <ChevronUp className="text-slate-400" /> : <ChevronDown className="text-slate-400" />}
             </div>
-
             {expandedPhase === phase.id && (
               <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="grid grid-cols-4 gap-3 mb-6">
@@ -203,7 +248,6 @@ const Dashboard = () => {
                     <button key={m} onClick={() => setExpandedMonth(m)} className={`p-3 rounded-xl font-bold border-2 transition-all ${expandedMonth === m ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white text-slate-400 border-slate-100 hover:border-slate-300'}`}>{m}</button>
                   ))}
                 </div>
-
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
                   <div className="bg-slate-900 text-white p-2 text-center font-bold uppercase tracking-widest text-[10px]">{expandedMonth}</div>
                   <div className="divide-y divide-slate-100">
@@ -214,7 +258,6 @@ const Dashboard = () => {
                       if (expandedMonth === 'April' && dateObj < new Date('2026-04-17T00:00:00')) return null;
                       if (expandedMonth === 'February' && dateObj > new Date('2027-02-21T00:00:00')) return null;
                       const task = manual || auto;
-
                       return (
                         <div key={dayStr} className="p-4 flex items-center group hover:bg-slate-50 transition-all">
                           <div className="w-12 text-center border-r border-slate-100 pr-4 mr-6 shrink-0 font-bold">
@@ -223,30 +266,20 @@ const Dashboard = () => {
                           </div>
                           <div className="flex-1">
                             {editingId === dayStr ? (
-                              <EditTaskForm 
-                                task={task} 
-                                dayStr={dayStr} 
-                                onSave={(newT, newF) => {
+                              <EditTaskForm task={task} dayStr={dayStr} onSave={(newT, newF) => {
                                   setManualTasks([...manualTasks.filter(t => t.date !== dayStr), { date: dayStr, title: newT, focus: newF, completed: false }]);
                                   setEditingId(null);
-                                }}
-                                onCancel={() => setEditingId(null)}
-                              />
+                                }} onCancel={() => setEditingId(null)} />
                             ) : (
                               <div className="flex justify-between items-center">
                                 <div>
-                                  <p className={`font-bold ${task?.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
-                                    {task ? task.title : <span className="text-slate-200 italic font-normal text-sm">Review Day</span>}
-                                  </p>
+                                  <p className={`font-bold ${task?.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task ? task.title : <span className="text-slate-200 italic font-normal text-sm">Review Day</span>}</p>
                                   {task?.focus && <p className="text-xs text-blue-500 font-bold italic mt-0.5">{task.focus}</p>}
                                 </div>
                                 <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <button onClick={() => setEditingId(dayStr)} className="p-2 text-slate-300 hover:text-blue-600"><Edit3 size={18}/></button>
                                   {task && (
-                                    <button 
-                                      onClick={() => setManualTasks([...manualTasks.filter(t => t.date !== dayStr), { ...task, date: dayStr, completed: !task.completed }])}
-                                      className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${task.completed ? 'bg-green-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white'}`}
-                                    >
+                                    <button onClick={() => setManualTasks([...manualTasks.filter(t => t.date !== dayStr), { ...task, date: dayStr, completed: !task.completed }])} className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${task.completed ? 'bg-green-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white'}`}>
                                       {task.completed ? 'Done' : 'Confirm'}
                                     </button>
                                   )}
@@ -290,21 +323,17 @@ const Dashboard = () => {
 };
 
 const EditTaskForm = ({ task, onSave, onCancel }) => {
-  const [selectedType, setSelectedType] = useState(
-    task?.title === 'English Class (Private)' ? 'class' : 
-    task?.title === 'Grammar Focus' ? 'grammar' : 'other'
-  );
+  const [selectedType, setSelectedType] = useState(task?.title === 'English Class (Private)' ? 'class' : task?.title === 'Grammar Focus' ? 'grammar' : 'other');
   const [customTitle, setCustomTitle] = useState(selectedType === 'other' ? task?.title || '' : '');
   const [focus, setFocus] = useState(task?.focus || '');
-
   return (
     <div className="space-y-2 p-2 bg-slate-50 rounded-lg border border-blue-100">
       <div className="flex flex-col gap-2">
         <label className="text-[10px] font-black uppercase text-slate-400">Task Type</label>
         <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="p-2 border rounded bg-white text-sm font-bold w-full">
-          <option value="class">English Class (Private) - Weight 3</option>
-          <option value="grammar">Grammar Focus - Weight 2</option>
-          <option value="other">Custom Task - Weight 1</option>
+          <option value="class">English Class (Private)</option>
+          <option value="grammar">Grammar Focus</option>
+          <option value="other">Custom Task</option>
         </select>
       </div>
       {selectedType === 'other' && (
