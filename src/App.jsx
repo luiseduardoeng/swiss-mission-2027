@@ -32,6 +32,18 @@ const Dashboard = () => {
     return () => unsub();
   }, []);
 
+  // --- LÓGICA DE NAVEGAÇÃO DO ROADMAP (Correção das Fases 2 e 3) ---
+  const handlePhaseChange = (phaseId) => {
+    if (expandedPhase === phaseId) {
+      setExpandedPhase(null);
+    } else {
+      setExpandedPhase(phaseId);
+      if (phaseId === 1) setExpandedMonth('April');
+      if (phaseId === 2) setExpandedMonth('August');
+      if (phaseId === 3) setExpandedMonth('December');
+    }
+  };
+
   const handleToggleTask = async (task) => {
     const taskRef = doc(db, "tasks", task.date);
     await setDoc(taskRef, {
@@ -99,6 +111,24 @@ const Dashboard = () => {
     "2027-02-15": "B1 General Review and Consolidation"
   };
 
+  const getAutoContent = (dateStr) => {
+    const date = new Date(dateStr + 'T12:00:00');
+    const dayOfWeek = date.getDay(); 
+    const isBreak = date >= new Date('2026-12-21') && date <= new Date('2027-01-10');
+    if (isBreak && dayOfWeek !== 1) return null;
+
+    if (dayOfWeek === 5) return { title: 'English Class (Private)', focus: '7:30 AM - B1 Acceleration' };
+    if (dayOfWeek === 1) return { title: 'Grammar Focus', focus: grammarSchedule[dateStr] || "Review & Practice" };
+
+    const contentMap = {
+      2: { title: 'Technical Vocabulary', focus: 'Poultry Industry & Engineering Terms' },
+      3: { title: 'Lesson Exercises', focus: 'Reviewing and solving class activities' },
+      4: { title: 'Listening Practice', focus: 'Swiss/International English Accents' },
+      6: { title: 'Video Immersion', focus: 'YouTube Video (Technical or Travel)' } // Sábados
+    };
+    return contentMap[dayOfWeek] || null;
+  };
+
   const calculateProgress = () => {
     const totalEstimatedPoints = 480; 
     const getWeight = (title) => {
@@ -113,23 +143,6 @@ const Dashboard = () => {
   };
 
   const currentPercent = calculateProgress();
-
-  const getAutoContent = (dateStr) => {
-    const date = new Date(dateStr + 'T12:00:00');
-    const dayOfWeek = date.getDay(); 
-    const isBreak = date >= new Date('2026-12-21') && date <= new Date('2027-01-10');
-    if (isBreak && dayOfWeek !== 1) return null;
-
-    if (dayOfWeek === 5) return { title: 'English Class (Private)', focus: '7:30 AM - B1 Acceleration' };
-    if (dayOfWeek === 1) return { title: 'Grammar Focus', focus: grammarSchedule[dateStr] || "Review & Practice" };
-
-    const contentMap = {
-      2: { title: 'Technical Vocabulary', focus: 'Poultry Industry & Engineering Terms' },
-      3: { title: 'Lesson Exercises', focus: 'Reviewing and solving class activities' },
-      4: { title: 'Listening Practice', focus: 'Swiss/International English Accents' }
-    };
-    return contentMap[dayOfWeek] || null;
-  };
 
   const RenderDashboard = () => {
     const today = new Date();
@@ -164,7 +177,7 @@ const Dashboard = () => {
         <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight italic uppercase">Swiss Mission Dashboard</h1>
-            <p className="text-slate-500">Cloud Synchronized • B1 Proficiency 2027</p>
+            <p className="text-slate-500">Cloud Synchronized • Targeting B1 Proficiency</p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-3">
             <Clock className="text-blue-600" />
