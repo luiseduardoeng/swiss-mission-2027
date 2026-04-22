@@ -32,7 +32,6 @@ const Dashboard = () => {
     return () => unsub();
   }, []);
 
-  // --- LÓGICA DE NAVEGAÇÃO DO ROADMAP (Correção das Fases 2 e 3) ---
   const handlePhaseChange = (phaseId) => {
     if (expandedPhase === phaseId) {
       setExpandedPhase(null);
@@ -117,20 +116,18 @@ const Dashboard = () => {
     const isBreak = date >= new Date('2026-12-21') && date <= new Date('2027-01-10');
     if (isBreak && dayOfWeek !== 1) return null;
 
-    if (dayOfWeek === 5) return { title: 'English Class (Private)', focus: '7:30 AM - B1 Acceleration' };
     if (dayOfWeek === 1) return { title: 'Grammar Focus', focus: grammarSchedule[dateStr] || "Review & Practice" };
-
-    const contentMap = {
-      2: { title: 'Technical Vocabulary', focus: 'Poultry Industry & Engineering Terms' },
-      3: { title: 'Lesson Exercises', focus: 'Reviewing and solving class activities' },
-      4: { title: 'Listening Practice', focus: 'Swiss/International English Accents' },
-      6: { title: 'Video Immersion', focus: 'YouTube Video (Technical or Travel)' } // Sábados
-    };
-    return contentMap[dayOfWeek] || null;
+    if (dayOfWeek === 2) return { title: 'Vocabulary', focus: 'Feed production or travel' };
+    if (dayOfWeek === 3) return { title: 'Lesson Exercises', focus: 'Reviewing class activities' };
+    if (dayOfWeek === 4) return { title: 'Listening Practice', focus: 'Review Video Immersion content' };
+    if (dayOfWeek === 5) return { title: 'English Class (Private)', focus: '7:30 AM - B1 Acceleration' };
+    if (dayOfWeek === 6) return { title: 'Video Immersion', focus: 'YouTube Video (Technical or Travel)' };
+    
+    return null;
   };
 
   const calculateProgress = () => {
-    const totalEstimatedPoints = 480; 
+    const totalPoints = 480; 
     const getWeight = (title) => {
       if (title.includes('English Class')) return 3;
       if (title.includes('Grammar Focus')) return 2;
@@ -139,10 +136,8 @@ const Dashboard = () => {
     const completedPoints = manualTasks
       .filter(t => t.completed)
       .reduce((acc, t) => acc + getWeight(t.title), 0);
-    return Math.min(100, Math.round((completedPoints / totalEstimatedPoints) * 100));
+    return Math.min(100, Math.round((completedPoints / totalPoints) * 100));
   };
-
-  const currentPercent = calculateProgress();
 
   const RenderDashboard = () => {
     const today = new Date();
@@ -151,33 +146,20 @@ const Dashboard = () => {
     nextWeek.setDate(today.getDate() + 7);
     const startDate = new Date('2026-04-17T00:00:00');
 
-    const getNextClassDate = () => {
-        const now = new Date();
-        const limitToday = new Date();
-        limitToday.setHours(9, 0, 0);
-        let nextFriday = new Date();
-        nextFriday.setDate(now.getDate() + (5 + 7 - now.getDay()) % 7);
-        if (now.getDay() === 5 && now > limitToday) nextFriday.setDate(nextFriday.getDate() + 7);
-        return nextFriday.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric' });
-    };
-
     const upcoming = [];
     for(let d = new Date(today); d <= nextWeek; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split('T')[0];
-      const currentDateObj = new Date(dateStr + 'T00:00:00');
-      if (currentDateObj >= startDate) {
-        const cloudTask = manualTasks.find(t => t.id === dateStr);
-        const auto = getAutoContent(dateStr);
-        if (cloudTask || auto) upcoming.push(cloudTask || { ...auto, date: dateStr, completed: false });
-      }
+      const cloudTask = manualTasks.find(t => t.id === dateStr);
+      const auto = getAutoContent(dateStr);
+      if (cloudTask || auto) upcoming.push(cloudTask || { ...auto, date: dateStr, completed: false });
     }
 
     return (
       <div className="max-w-5xl mx-auto">
         <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight italic uppercase">Swiss Mission Dashboard</h1>
-            <p className="text-slate-500">Cloud Synchronized • Targeting B1 Proficiency</p>
+            <h1 className="text-3xl font-extrabold text-slate-800 italic uppercase tracking-tighter">Swiss Mission Dashboard</h1>
+            <p className="text-slate-500">Cloud Synchronized • Professional Roadmap</p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-3">
             <Clock className="text-blue-600" />
@@ -190,25 +172,25 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-600">
             <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Overall Progress</h3>
-            <p className="text-3xl font-black text-slate-800 mt-2">{currentPercent}%</p>
+            <p className="text-3xl font-black text-slate-800 mt-2">{calculateProgress()}%</p>
             <div className="w-full bg-slate-100 rounded-full h-3 mt-4">
-              <div className="bg-blue-600 h-3 rounded-full transition-all duration-700" style={{ width: `${currentPercent}%` }}></div>
+              <div className="bg-blue-600 h-3 rounded-full transition-all duration-700" style={{ width: `${calculateProgress()}%` }}></div>
             </div>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-red-600">
-            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Days to Switzerland</h3>
+            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Switzerland Countdown</h3>
             <p className="text-3xl font-black text-slate-800 mt-2">{Math.ceil((new Date('2027-02-22') - new Date()) / (1000 * 3600 * 24))} Days</p>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-green-600">
-            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Next Class</h3>
-            <p className="text-3xl font-black text-slate-800 mt-2">{getNextClassDate()}</p>
-            <p className="text-xs text-slate-400 mt-2 italic">7:30 AM Session</p>
+            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">System Status</h3>
+            <p className="text-3xl font-black text-slate-800 mt-2">Online</p>
+            <p className="text-xs text-green-500 mt-2 italic font-bold">Real-time DB Active</p>
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-md border border-slate-200 p-6">
           <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <CheckCircle2 className="text-blue-600" size={24} /> Weekly Schedule
+            <CheckCircle2 className="text-blue-600" size={24} /> Next 7 Days
           </h2>
           <div className="space-y-4">
             {upcoming.map((task, idx) => (
@@ -288,26 +270,14 @@ const Dashboard = () => {
                             <span className="block text-[10px] text-slate-300 uppercase">{dateObj.toLocaleDateString('en-US', { weekday: 'short' })}</span>
                             <span className="text-lg text-slate-700">{dateObj.getDate()}</span>
                           </div>
-                          <div className="flex-1">
-                            {editingId === dayStr ? (
-                              <EditTaskForm task={task} onSave={(newT, newF) => handleSaveEdit(dayStr, newT, newF)} onCancel={() => setEditingId(null)} />
-                            ) : (
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <p className={`font-bold ${task?.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task ? task.title : <span className="text-slate-200 italic font-normal text-sm">Review Day</span>}</p>
-                                  {task?.focus && <p className="text-xs text-blue-500 font-bold italic mt-0.5">{task.focus}</p>}
-                                </div>
-                                <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button onClick={() => setEditingId(dayStr)} className="p-2 text-slate-300 hover:text-blue-600"><Edit3 size={18}/></button>
-                                  {task && (
-                                    <button onClick={() => handleToggleTask({...task, date: dayStr})} className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${task.completed ? 'bg-green-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white'}`}>
-                                      {task.completed ? 'Done' : 'Confirm'}
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            )}
+                          <div className="flex-1 flex justify-between items-center">
+                            <div>
+                              <p className={`font-bold ${task?.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task ? task.title : <span className="text-slate-200 italic font-normal text-sm">Review Day</span>}</p>
+                              {task?.focus && <p className="text-xs text-blue-500 font-bold italic mt-0.5">{task.focus}</p>}
+                            </div>
+                            <button onClick={() => setEditingId(dayStr)} className="p-2 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-blue-600 transition-opacity"><Edit3 size={18}/></button>
                           </div>
+                          {editingId === dayStr && <EditTaskForm task={task} onSave={(newT, newF) => handleSaveEdit(dayStr, newT, newF)} onCancel={() => setEditingId(null)} />}
                         </div>
                       );
                     })}
@@ -322,20 +292,14 @@ const Dashboard = () => {
   };
 
   const EditTaskForm = ({ task, onSave, onCancel }) => {
-    const [selectedType, setSelectedType] = useState(task?.title === 'English Class (Private)' ? 'class' : task?.title === 'Grammar Focus' ? 'grammar' : 'other');
-    const [customTitle, setCustomTitle] = useState(selectedType === 'other' ? task?.title || '' : '');
-    const [focus, setFocus] = useState(task?.focus || '');
+    const [t, setT] = useState(task?.title || '');
+    const [f, setF] = useState(task?.focus || '');
     return (
-      <div className="space-y-2 p-2 bg-slate-50 rounded-lg border border-blue-100">
-        <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="p-2 border rounded bg-white text-sm font-bold w-full">
-          <option value="class">English Class (Private)</option>
-          <option value="grammar">Grammar Focus</option>
-          <option value="other">Custom Task</option>
-        </select>
-        {selectedType === 'other' && <input className="p-2 border rounded font-bold text-sm w-full" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} />}
-        <input className="p-2 border rounded text-sm w-full" value={focus} onChange={(e) => setFocus(e.target.value)} />
-        <div className="flex space-x-2 pt-1">
-          <button onClick={() => onSave(selectedType === 'class' ? 'English Class (Private)' : selectedType === 'grammar' ? 'Grammar Focus' : customTitle, focus)} className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-black">SAVE</button>
+      <div className="absolute right-0 bg-white p-4 border shadow-2xl rounded-xl z-50 w-72">
+        <input className="w-full p-2 border rounded mb-2 text-sm font-bold" value={t} onChange={e => setT(e.target.value)} placeholder="Title" />
+        <textarea className="w-full p-2 border rounded mb-2 text-sm" value={f} onChange={e => setF(e.target.value)} placeholder="Focus" rows={2} />
+        <div className="flex gap-2">
+          <button onClick={() => onSave(t, f)} className="bg-blue-600 text-white px-4 py-1 rounded text-xs font-black">SAVE</button>
           <button onClick={onCancel} className="text-slate-400 text-xs font-bold">CANCEL</button>
         </div>
       </div>
@@ -346,7 +310,7 @@ const Dashboard = () => {
     <div className="flex h-screen bg-gray-100 font-sans text-slate-900 overflow-hidden">
       <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0 shadow-2xl">
         <div className="p-6 text-xl font-black border-b border-slate-700 text-white tracking-tighter uppercase italic flex items-center gap-3">
-          <img src="https://flagcdn.com/w40/ch.png" alt="Switzerland Flag" className="w-6 h-6 rounded-sm shadow-sm" />
+          <img src="https://flagcdn.com/w40/ch.png" alt="Switzerland" className="w-6 h-4" />
           Swiss Mission 27
         </div>
         <nav className="flex-1 p-4 space-y-2 font-bold">
