@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot, collection } from "firebase/firestore";
-import { LayoutDashboard, Plane, Factory, Clock, Calendar, CheckCircle2, Circle, Edit3, ChevronDown, ChevronUp } from 'lucide-react';
+import { LayoutDashboard, Clock, Calendar, CheckCircle2, Circle, Edit3, ChevronDown, ChevronUp, Save, ListRestart } from 'lucide-react';
 
 // --- CONFIGURAÇÃO DO FIREBASE ---
 const firebaseConfig = {
@@ -22,47 +22,41 @@ const Dashboard = () => {
   const [expandedMonth, setExpandedMonth] = useState('April');
   const [editingId, setEditingId] = useState(null);
   const [manualTasks, setManualTasks] = useState([]);
+  const [weeklyPlan, setWeeklyPlan] = useState({}); 
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
 
-  // --- SINCRONIZAÇÃO EM TEMPO REAL COM FIRESTORE ---
+  // --- SINCRONIZAÇÃO EM TEMPO REAL ---
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "tasks"), (snapshot) => {
+    const unsubTasks = onSnapshot(collection(db, "tasks"), (snapshot) => {
       const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setManualTasks(tasksData);
     });
-    return () => unsub();
+    const unsubSettings = onSnapshot(doc(db, "settings", "weeklyPlan"), (docSnap) => {
+      if (docSnap.exists()) setWeeklyPlan(docSnap.data());
+    });
+    return () => { unsubTasks(); unsubSettings(); };
   }, []);
 
-  const handlePhaseChange = (phaseId) => {
-    if (expandedPhase === phaseId) {
-      setExpandedPhase(null);
-    } else {
-      setExpandedPhase(phaseId);
-      if (phaseId === 1) setExpandedMonth('April');
-      if (phaseId === 2) setExpandedMonth('August');
-      if (phaseId === 3) setExpandedMonth('December');
-    }
+  const handleBulkUpdate = async (dayIndex, newTitle, newFocus) => {
+    const planRef = doc(db, "settings", "weeklyPlan");
+    await setDoc(planRef, {
+      [dayIndex]: { title: newTitle, focus: newFocus }
+    }, { merge: true });
+    setIsBulkEditing(false);
   };
 
   const handleToggleTask = async (task) => {
-    const taskRef = doc(db, "tasks", task.date);
-    await setDoc(taskRef, {
-      ...task,
-      completed: !task.completed
-    }, { merge: true });
+    const dateKey = task.date || task.id;
+    const taskRef = doc(db, "tasks", dateKey);
+    await setDoc(taskRef, { ...task, date: dateKey, completed: !task.completed }, { merge: true });
   };
 
   const handleSaveEdit = async (date, title, focus) => {
     const taskRef = doc(db, "tasks", date);
-    await setDoc(taskRef, {
-      date,
-      title,
-      focus,
-      completed: false
-    }, { merge: true });
+    await setDoc(taskRef, { date, title, focus, completed: false }, { merge: true });
     setEditingId(null);
   };
 
-  // --- ENGLISH GRAMMAR SCHEDULE ---
   const grammarSchedule = {
     "2026-04-20": "The Verb To Be (Present) and Personal Pronouns",
     "2026-04-27": "Articles (A, An, The) and Plural Nouns",
@@ -113,8 +107,12 @@ const Dashboard = () => {
   const getAutoContent = (dateStr) => {
     const date = new Date(dateStr + 'T12:00:00');
     const dayOfWeek = date.getDay(); 
-    const isBreak = date >= new Date('2026-12-21') && date <= new Date('2027-01-10');
-    if (isBreak && dayOfWeek !== 1) return null;
+    const isAfterCutoff = date >= new Date('2026-04-24T00:00:00');
+    const customRule = weeklyPlan[dayOfWeek];
+
+    if (isAfterCutoff && customRule) {
+      return { title: customRule.title, focus: customRule.focus };
+    }
 
     if (dayOfWeek === 1) return { title: 'Grammar Focus', focus: grammarSchedule[dateStr] || "Review & Practice" };
     if (dayOfWeek === 2) return { title: 'Vocabulary', focus: 'Feed production or travel' };
@@ -128,15 +126,41 @@ const Dashboard = () => {
 
   const calculateProgress = () => {
     const totalPoints = 480; 
-    const getWeight = (title) => {
-      if (title.includes('English Class')) return 3;
-      if (title.includes('Grammar Focus')) return 2;
-      return 1;
-    };
-    const completedPoints = manualTasks
-      .filter(t => t.completed)
-      .reduce((acc, t) => acc + getWeight(t.title), 0);
+    const completedPoints = manualTasks.filter(t => t.completed).length; 
     return Math.min(100, Math.round((completedPoints / totalPoints) * 100));
+  };
+
+  const RenderBulkEditModal = () => {
+    const [day, setDay] = useState("1");
+    const [t, setT] = useState("");
+    const [f, setF] = useState("");
+
+    return (
+      <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-slate-200">
+          <h2 className="text-2xl font-black text-slate-800 mb-2 uppercase italic">Update Weekly Plan</h2>
+          <p className="text-slate-500 text-sm mb-6">Change ALL future occurrences of this day from April 24th onwards.</p>
+          <div className="space-y-4">
+            <select className="w-full p-3 border rounded-xl font-bold bg-slate-50" value={day} onChange={e => setDay(e.target.value)}>
+              <option value="1">Monday</option>
+              <option value="2">Tuesday</option>
+              <option value="3">Wednesday</option>
+              <option value="4">Thursday</option>
+              <option value="5">Friday</option>
+              <option value="6">Saturday</option>
+            </select>
+            <input className="w-full p-3 border rounded-xl font-bold" value={t} onChange={e => setT(e.target.value)} placeholder="New Task Title" />
+            <textarea className="w-full p-3 border rounded-xl" value={f} onChange={e => setF(e.target.value)} placeholder="Task Focus" rows={3} />
+          </div>
+          <div className="flex gap-3 mt-8">
+            <button onClick={() => handleBulkUpdate(day, t, f)} className="flex-1 bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-700 flex items-center justify-center gap-2">
+              <Save size={18} /> APPLY
+            </button>
+            <button onClick={() => setIsBulkEditing(false)} className="px-6 py-3 text-slate-400 font-bold">CANCEL</button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const RenderDashboard = () => {
@@ -149,9 +173,11 @@ const Dashboard = () => {
     const upcoming = [];
     for(let d = new Date(today); d <= nextWeek; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split('T')[0];
-      const cloudTask = manualTasks.find(t => t.id === dateStr);
-      const auto = getAutoContent(dateStr);
-      if (cloudTask || auto) upcoming.push(cloudTask || { ...auto, date: dateStr, completed: false });
+      if (new Date(dateStr + 'T00:00:00') >= startDate) {
+        const cloudTask = manualTasks.find(t => t.id === dateStr);
+        const auto = getAutoContent(dateStr);
+        if (cloudTask || auto) upcoming.push(cloudTask || { ...auto, date: dateStr, completed: false });
+      }
     }
 
     return (
@@ -159,44 +185,35 @@ const Dashboard = () => {
         <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-extrabold text-slate-800 italic uppercase tracking-tighter">Swiss Mission Dashboard</h1>
-            <p className="text-slate-500">Cloud Synchronized • Professional Roadmap</p>
+            <p className="text-slate-500 font-medium italic underline decoration-blue-500">Cloud Synchronized • Professional Roadmap</p>
           </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-3">
-            <Clock className="text-blue-600" />
-            <span className="font-mono font-bold text-lg text-slate-700 uppercase">
-              {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-            </span>
-          </div>
+          <button onClick={() => setIsBulkEditing(true)} className="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 hover:bg-blue-600 transition-all">
+            <ListRestart size={16} /> EDIT WEEKLY PLAN
+          </button>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-600">
             <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Overall Progress</h3>
             <p className="text-3xl font-black text-slate-800 mt-2">{calculateProgress()}%</p>
-            <div className="w-full bg-slate-100 rounded-full h-3 mt-4">
-              <div className="bg-blue-600 h-3 rounded-full transition-all duration-700" style={{ width: `${calculateProgress()}%` }}></div>
-            </div>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-red-600">
-            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Switzerland Countdown</h3>
+            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Days to Switzerland</h3>
             <p className="text-3xl font-black text-slate-800 mt-2">{Math.ceil((new Date('2027-02-22') - new Date()) / (1000 * 3600 * 24))} Days</p>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-green-600">
-            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">System Status</h3>
+            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Status</h3>
             <p className="text-3xl font-black text-slate-800 mt-2">Online</p>
-            <p className="text-xs text-green-500 mt-2 italic font-bold">Real-time DB Active</p>
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-md border border-slate-200 p-6">
-          <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <CheckCircle2 className="text-blue-600" size={24} /> Next 7 Days
-          </h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2"><CheckCircle2 className="text-blue-600" size={24} /> Weekly Schedule</h2>
           <div className="space-y-4">
             {upcoming.map((task, idx) => (
               <div key={idx} className={`p-4 rounded-xl border flex items-center justify-between ${task.completed ? 'bg-green-50 border-green-200 opacity-60' : 'bg-blue-50 border-blue-100'}`}>
                 <div className="flex items-center">
-                  <div className="w-14 h-14 bg-blue-600 text-white rounded-lg flex flex-col items-center justify-center font-bold shrink-0">
+                  <div className="w-14 h-14 bg-blue-600 text-white rounded-lg flex flex-col items-center justify-center font-bold">
                     <span className="text-[10px] uppercase">{new Date(task.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short' })}</span>
                     <span className="text-xl">{new Date(task.date + 'T12:00:00').getDate()}</span>
                   </div>
@@ -214,6 +231,16 @@ const Dashboard = () => {
         </div>
       </div>
     );
+  };
+
+  const handlePhaseChange = (phaseId) => {
+    if (expandedPhase === phaseId) setExpandedPhase(null);
+    else {
+      setExpandedPhase(phaseId);
+      if (phaseId === 1) setExpandedMonth('April');
+      if (phaseId === 2) setExpandedMonth('August');
+      if (phaseId === 3) setExpandedMonth('December');
+    }
   };
 
   const getDaysInMonth = (monthName, year) => {
@@ -236,9 +263,9 @@ const Dashboard = () => {
     ];
     return (
       <div className="max-w-4xl mx-auto pb-10">
-        <header className="mb-10 text-slate-800">
+        <header className="mb-10 text-slate-800 tracking-tighter">
           <h1 className="text-3xl font-extrabold tracking-tight uppercase italic">Swiss Mission Roadmap</h1>
-          <p className="text-slate-500">English Proficiency Strategy</p>
+          <p className="text-slate-500 font-medium">English Proficiency Strategy</p>
         </header>
         {phases.map(phase => (
           <div key={phase.id} className={`relative pl-10 border-l-4 ${phase.color} mb-12`}>
@@ -275,7 +302,14 @@ const Dashboard = () => {
                               <p className={`font-bold ${task?.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task ? task.title : <span className="text-slate-200 italic font-normal text-sm">Review Day</span>}</p>
                               {task?.focus && <p className="text-xs text-blue-500 font-bold italic mt-0.5">{task.focus}</p>}
                             </div>
-                            <button onClick={() => setEditingId(dayStr)} className="p-2 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-blue-600 transition-opacity"><Edit3 size={18}/></button>
+                            <div className="flex items-center space-x-3">
+                              <button onClick={() => setEditingId(dayStr)} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-blue-600 transition-opacity"><Edit3 size={18}/></button>
+                              {task && (
+                                <button onClick={() => handleToggleTask({...task, date: dayStr})} className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${task.completed ? 'bg-green-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white'}`}>
+                                  {task.completed ? 'Done' : 'Confirm'}
+                                </button>
+                              )}
+                            </div>
                           </div>
                           {editingId === dayStr && <EditTaskForm task={task} onSave={(newT, newF) => handleSaveEdit(dayStr, newT, newF)} onCancel={() => setEditingId(null)} />}
                         </div>
@@ -308,6 +342,7 @@ const Dashboard = () => {
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans text-slate-900 overflow-hidden">
+      {isBulkEditing && <RenderBulkEditModal />}
       <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0 shadow-2xl">
         <div className="p-6 text-xl font-black border-b border-slate-700 text-white tracking-tighter uppercase italic flex items-center gap-3">
           <img src="https://flagcdn.com/w40/ch.png" alt="Switzerland" className="w-6 h-4" />
